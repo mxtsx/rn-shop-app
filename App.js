@@ -4,6 +4,15 @@ import {store} from "./src/redux/store";
 import {ShopNavigator} from "./src/navigation/ShopNavigator";
 import AppLoading from "expo-app-loading"
 import * as Font from "expo-font"
+import * as Notifications from "expo-notifications";
+
+Notifications.setNotificationHandler({
+    handleNotification: () => {
+        return {
+            shouldShowAlert: true
+        }
+    }
+})
 
 const fetchFonts = async () => {
     await Font.loadAsync({
@@ -14,7 +23,6 @@ const fetchFonts = async () => {
 
 export default function App() {
     const [isReady, setIsReady] = useState()
-
     if(!isReady) {
         return <AppLoading startAsync={fetchFonts}
                            onError={e => console.log(e)}

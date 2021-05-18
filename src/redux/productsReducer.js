@@ -1,4 +1,5 @@
 import {Product} from "../models/products";
+import {registerForPushNotificationsAsync} from "../notifications/notifications";
 
 export const DELETE_PRODUCT = 'products/DELETE_PRODUCT'
 export const CREATE_PRODUCT = 'products/CREATE_PRODUCT'
@@ -35,7 +36,7 @@ export const productsReducer = (state = initialState, action) => {
                 availableProducts: state.availableProducts.filter(p => p.id !== action.payload.id)
             }
         case CREATE_PRODUCT:
-            const newProduct = new Product(action.id, action.payload.ownerId, action.payload.title,action.payload.imageUrl,action.payload.description,action.payload.price)
+            const newProduct = new Product(action.id, action.payload.ownerId, action.payload.pushToken, action.payload.title, action.payload.imageUrl,action.payload.description,action.payload.price)
             return {
                 ...state,
                 availableProducts: state.availableProducts.concat(newProduct),
@@ -46,6 +47,7 @@ export const productsReducer = (state = initialState, action) => {
             const updatedProduct = new Product(
                 action.payload.id,
                 currentPost.ownerId,
+                currentPost.pushToken,
                 action.payload.title,
                 action.payload.imageUrl,
                 action.payload.description,
@@ -82,7 +84,7 @@ export const productsReducer = (state = initialState, action) => {
 }
 
 export const deleteProduct = (id) => ({type: DELETE_PRODUCT, payload: {id}})
-export const createProduct = (id, title, description, imageUrl, price, ownerId) => ({type: CREATE_PRODUCT, payload: {id, title, description, price, imageUrl, ownerId}})
+export const createProduct = (id, title, description, imageUrl, price, ownerId, pushToken) => ({type: CREATE_PRODUCT, payload: {id, title, description, price, imageUrl, ownerId, pushToken}})
 export const updateProduct = (id, title, description, imageUrl) => ({type: UPDATE_PRODUCT, payload: {id, title, description, imageUrl}})
 export const fetchProduct = (loadedProducts, loadedUserProducts) => ({type: FETCH_PRODUCT, products: loadedProducts, userProducts: loadedUserProducts})
 export const setIsLoading = (isLoading) => ({type: SET_IS_LOADING, payload: {isLoading}})
@@ -93,6 +95,7 @@ export const createProductThunk = (title, description, imageUrl, price) => async
     dispatch(clearError())
     dispatch(setIsLoading(true))
     try {
+        const pushToken = await registerForPushNotificationsAsync()
         const id = getState().auth.userId
         const token = getState().auth.token
         const res = await fetch(`https://rn-shop-app-21344-default-rtdb.europe-west1.firebasedatabase.app/products.json?auth=${token}`, {
@@ -103,11 +106,12 @@ export const createProductThunk = (title, description, imageUrl, price) => async
                 description,
                 imageUrl,
                 price,
-                ownerId: id
+                ownerId: id,
+                ownerPushToken: pushToken
             })
         })
         const resData = await res.json()
-        dispatch(createProduct(resData.name, title, description, imageUrl, price, id))
+        dispatch(createProduct(resData.name, title, description, imageUrl, price, id, pushToken))
     } catch (e) {
         dispatch(setError('Something goes wrong'))
         console.log(e)
@@ -170,7 +174,7 @@ export const fetchProductThunk = () => async (dispatch, getState) => {
         const resData = await res.json()
         const loadedProducts = []
         for(const key in resData) {
-            loadedProducts.push(new Product(key, resData[key].ownerId, resData[key].title, resData[key].imageUrl, resData[key].description, resData[key].price))
+            loadedProducts.push(new Product(key, resData[key].ownerId, resData[key].ownerPushToken, resData[key].title, resData[key].imageUrl, resData[key].description, resData[key].price))
         }
         const loadedUserProducts = loadedProducts?.filter(p => p.ownerId === id)
         dispatch(fetchProduct(loadedProducts, loadedUserProducts))

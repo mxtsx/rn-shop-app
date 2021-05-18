@@ -16,16 +16,18 @@ export const cartReducer = (state = initialState, action) => {
             const addedProduct = action.payload.product
             const productPrice = addedProduct.price
             const productTitle = addedProduct.title
+            const pushToken = addedProduct.ownerPushToken
             let updatedOrNewCartItem
             if(state.items[addedProduct.id]) {
                 updatedOrNewCartItem = new CartItem(
                     state.items[addedProduct.id].quantity + 1,
                     productPrice,
                     productTitle,
+                    pushToken,
                     state.items[addedProduct.id].sum + productPrice
                 )
             } else {
-                updatedOrNewCartItem = new CartItem(1, productPrice, productTitle, productPrice)
+                updatedOrNewCartItem = new CartItem(1, productPrice, productTitle, pushToken, productPrice)
             }
             return {
                 ...state,

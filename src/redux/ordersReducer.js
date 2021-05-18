@@ -75,6 +75,22 @@ export const addOrderThunk = (cartItems, totalAmount) => async (dispatch, getSta
         })
         const resData = await res.json()
         dispatch(addOrder(resData.name, cartItems, totalAmount, date))
+        for (let cartItem of cartItems) {
+            const pushToken = cartItem.pushToken
+            fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    to: pushToken,
+                    title: 'Order was placed!',
+                    body: cartItem.productTitle
+                })
+            })
+        }
     } catch (e) {
         dispatch(setError('Something goes wrong'))
         console.log(e)
